@@ -15,8 +15,10 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (transform.position.x < -xRange) {
-            transform.position = new Vector3(-xRange, transform.position.y, transform.position.z); 
+    //this if statements limits the range where the player can go into to avoid having the player fall off the map
+        if (transform.position.x < -xRange)
+        {
+            transform.position = new Vector3(-xRange, transform.position.y, transform.position.z);
         }
         if (transform.position.x > xRange) {
             transform.position = new Vector3(xRange, transform.position.y, transform.position.z); 
