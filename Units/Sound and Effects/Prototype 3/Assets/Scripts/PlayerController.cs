@@ -3,8 +3,13 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     private Rigidbody playerRb;
-     private Animator playerAnim;
-     public ParticleSystem explosionParticle;
+    private Animator playerAnim;
+    public ParticleSystem explosionParticle;
+    public ParticleSystem dirtParticle;
+    public AudioClip jumpSound;
+    public AudioClip crashSound;
+    private AudioSource playerAudio;
+
     public float jumpForce = 10;
     public float gravityModifier;
     public bool isOnGround = true;
@@ -13,10 +18,10 @@ public class PlayerController : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
+        playerAudio = GetComponent<AudioSource>();
         playerRb = GetComponent<Rigidbody>();
         playerAnim = GetComponent<Animator>();
-        Physics.gravity *= gravityModifier;
-        
+        Physics.gravity *= gravityModifier;   
     }
 
     // Update is called once per frame
@@ -26,24 +31,28 @@ public class PlayerController : MonoBehaviour
         {
             playerRb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse); 
             isOnGround = false;  
-            playerAnim.SetTrigger("Jump_trig"); 
+            playerAnim.SetTrigger("Jump_trig");
+            playerAudio.PlayOneShot(jumpSound, 1.0f);  
+            dirtParticle.Stop();
         }
     }
 
     private void OnCollisionEnter(Collision collision)
     {
-        isOnGround = true;
-
         if(collision.gameObject.CompareTag("Ground"))
         {
             isOnGround = true;
-        } else if (collision.gameObject.CompareTag("Obstacle"))
+            dirtParticle.Play();
+        } 
+        else if (collision.gameObject.CompareTag("Obstacle"))
         {
             Debug.Log("Game Over");
             gameOver = true;
             playerAnim.SetBool("Death_b", true);
             playerAnim.SetInteger("DeathType_int", 1);
             explosionParticle.Play();
+            playerAudio.PlayOneShot(crashSound, 1.0f);
+            dirtParticle.Stop();
         }
     }
 }
