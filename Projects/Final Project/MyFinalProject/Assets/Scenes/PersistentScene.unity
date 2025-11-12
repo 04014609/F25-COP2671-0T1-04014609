@@ -436,7 +436,7 @@ GameObject:
   - component: {fileID: 408445600}
   m_Layer: 0
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1005,7 +1005,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 992a7b84ec92f5a40a56f9c5e950944c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _cropBlockPrefab: {fileID: 0}
+  _cropBlockPrefab: {fileID: -4225271137990534791, guid: 2c58d3a060b7d774296d87d9dbb4f102, type: 3}
 --- !u!1 &559246407
 GameObject:
   m_ObjectHideFlags: 0

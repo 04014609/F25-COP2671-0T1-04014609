@@ -138,7 +138,7 @@ MonoBehaviour:
   _plowedSoilIcon: {fileID: -761770585386879356, guid: a787d978b74a56f40b7cf02bc7a54910, type: 3}
   _wateredSoilSR: {fileID: 4162433701242524125}
   _wateredSoilIcon: {fileID: 6177667884121938845, guid: 630c65f1a6ea2764aa6c2b72485b7fd7, type: 3}
-  _cropSR: {fileID: 0}
+  _cropSR: {fileID: 227083708280573980}
 --- !u!1 &6884245177513788900
 GameObject:
   m_ObjectHideFlags: 0

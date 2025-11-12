@@ -9,12 +9,12 @@ public class PlayerController : MonoBehaviour
     private SpriteRenderer sr;
 
     private Vector2 moveInput;
-    private Vector2 lastDir = Vector2.down; // default face down
+    private Vector2 lastMoveDir = Vector2.down; // default facing front
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
-        anim = GetComponentInChildren<Animator>();   // animator on child sprite
+        anim = GetComponentInChildren<Animator>();
         sr = GetComponentInChildren<SpriteRenderer>();
     }
 
@@ -22,30 +22,36 @@ public class PlayerController : MonoBehaviour
     {
         float moveX = Input.GetAxisRaw("Horizontal");
         float moveY = Input.GetAxisRaw("Vertical");
+
         moveInput = new Vector2(moveX, moveY).normalized;
 
-        // movement params
         bool isMoving = moveInput.sqrMagnitude > 0.01f;
         anim.SetBool("IsMoving", isMoving);
-        anim.SetFloat("MoveX", moveInput.x);
-        anim.SetFloat("MoveY", moveInput.y);
 
-        // remember last facing dir when moving
         if (isMoving)
         {
-            lastDir = moveInput;
-            anim.SetFloat("LastX", lastDir.x);
-            anim.SetFloat("LastY", lastDir.y);
+            anim.SetFloat("MoveX", moveInput.x);
+            anim.SetFloat("MoveY", moveInput.y);
+
+            lastMoveDir = moveInput; // << IMPORTANT FIX
+
+            anim.SetFloat("LastX", lastMoveDir.x);
+            anim.SetFloat("LastY", lastMoveDir.y);
         }
 
-        // actions (1=Water, 2=Cut, 3=Gather)
-        if (Input.GetKeyDown(KeyCode.Alpha1)) anim.SetTrigger("Water");
-        if (Input.GetKeyDown(KeyCode.Alpha2)) anim.SetTrigger("Cut");
-        if (Input.GetKeyDown(KeyCode.Alpha3)) anim.SetTrigger("Gather");
+        // Flip sprite visually
+        if (lastMoveDir.x > 0.1f) sr.flipX = false;
+        else if (lastMoveDir.x < -0.1f) sr.flipX = true;
 
-        // simple flip for left/right sprites if you use one right-facing sheet
-        if (moveInput.x > 0.1f) sr.flipX = false;
-        else if (moveInput.x < -0.1f) sr.flipX = true;
+        // Tool / Action triggers
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+            anim.SetTrigger("Water");
+
+        if (Input.GetKeyDown(KeyCode.Alpha2))
+            anim.SetTrigger("Cut");
+
+        if (Input.GetKeyDown(KeyCode.Alpha3))
+            anim.SetTrigger("Gather");
     }
 
     void FixedUpdate()

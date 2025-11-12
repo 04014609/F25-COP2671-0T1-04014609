@@ -1,0 +1,64 @@
+using UnityEngine;
+using UnityEngine.Events;
+
+public class FarmingController : MonoBehaviour
+{
+    public static UnityEvent OnHoe = new UnityEvent();
+    public static UnityEvent OnWater = new UnityEvent();
+    public static UnityEvent OnSeed = new UnityEvent();
+    public static UnityEvent OnHarvest = new UnityEvent();
+
+    [SerializeField] private CropBlock selectedBlock;
+    [SerializeField] private SeedPacket currentSeed;
+
+    private void OnEnable()
+    {
+        OnHoe.AddListener(HoeSelected);
+        OnWater.AddListener(WaterSelected);
+        OnSeed.AddListener(SeedSelected);
+        OnHarvest.AddListener(HarvestSelected);
+    }
+
+    private void OnDisable()
+    {
+        OnHoe.RemoveListener(HoeSelected);
+        OnWater.RemoveListener(WaterSelected);
+        OnSeed.RemoveListener(SeedSelected);
+        OnHarvest.RemoveListener(HarvestSelected);
+    }
+
+    private void HoeSelected()
+    {
+        if (selectedBlock != null)
+            selectedBlock.PlowSoil();
+    }
+
+    private void WaterSelected()
+    {
+        if (selectedBlock != null)
+            selectedBlock.WaterSoil();
+    }
+
+    private void SeedSelected()
+    {
+        if (selectedBlock != null && currentSeed != null)
+            selectedBlock.PlantSeed(currentSeed);
+    }
+
+    private void HarvestSelected()
+    {
+        if (selectedBlock != null)
+            selectedBlock.HarvestPlants();
+    }
+
+    // This will be called when the player highlights a tile
+    public void SelectCropBlock(CropBlock block)
+    {
+        selectedBlock = block;
+    }
+
+    public void SetSeed(SeedPacket seed)
+    {
+        currentSeed = seed;
+    }
+}
