@@ -9,7 +9,9 @@ public class PlayerController : MonoBehaviour
     private SpriteRenderer sr;
 
     private Vector2 moveInput;
-    private Vector2 lastMoveDir = Vector2.down; // default facing front
+    private Vector2 lastMoveDir = Vector2.down;
+    public Vector2 LastMoveDirection => lastMoveDir;
+
 
     void Start()
     {
@@ -30,28 +32,57 @@ public class PlayerController : MonoBehaviour
 
         if (isMoving)
         {
+            lastMoveDir = moveInput;
             anim.SetFloat("MoveX", moveInput.x);
             anim.SetFloat("MoveY", moveInput.y);
-
-            lastMoveDir = moveInput; // << IMPORTANT FIX
-
             anim.SetFloat("LastX", lastMoveDir.x);
             anim.SetFloat("LastY", lastMoveDir.y);
+
+            // Farming hotkeys
+            if (Input.GetKeyDown(KeyCode.Alpha1))
+            {
+                FarmingController.OnHoe.Invoke();
+                Debug.Log("HOE pressed");
+            }
+
+            if (Input.GetKeyDown(KeyCode.Alpha2))
+            {
+                FarmingController.OnWater.Invoke();
+                Debug.Log("WATER pressed");
+            }
+
+            if (Input.GetKeyDown(KeyCode.Alpha3))
+            {
+                FarmingController.OnSeed.Invoke();
+                Debug.Log("SEED pressed");
+            }
+
+            if (Input.GetKeyDown(KeyCode.Alpha4))
+            {
+                FarmingController.OnHarvest.Invoke();
+                Debug.Log("HARVEST pressed");
+            }
         }
 
-        // Flip sprite visually
+        // Flip sprite
         if (lastMoveDir.x > 0.1f) sr.flipX = false;
         else if (lastMoveDir.x < -0.1f) sr.flipX = true;
 
-        // Tool / Action triggers
+        // ===============================
+        //   ACTION HOTKEYS (REQUIRED)
+        // ===============================
+
         if (Input.GetKeyDown(KeyCode.Alpha1))
-            anim.SetTrigger("Water");
+            FarmingController.OnHoe.Invoke();
 
         if (Input.GetKeyDown(KeyCode.Alpha2))
-            anim.SetTrigger("Cut");
+            FarmingController.OnWater.Invoke();
 
         if (Input.GetKeyDown(KeyCode.Alpha3))
-            anim.SetTrigger("Gather");
+            FarmingController.OnSeed.Invoke();
+
+        if (Input.GetKeyDown(KeyCode.Alpha4))
+            FarmingController.OnHarvest.Invoke();
     }
 
     void FixedUpdate()

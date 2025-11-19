@@ -3,13 +3,22 @@ using UnityEngine.Events;
 
 public class FarmingController : MonoBehaviour
 {
+    public static FarmingController Instance;
+
     public static UnityEvent OnHoe = new UnityEvent();
     public static UnityEvent OnWater = new UnityEvent();
     public static UnityEvent OnSeed = new UnityEvent();
     public static UnityEvent OnHarvest = new UnityEvent();
+   
+
 
     [SerializeField] private CropBlock selectedBlock;
     [SerializeField] private SeedPacket currentSeed;
+
+    private void Awake()
+    {
+        Instance = this;   // IMPORTANT FIX
+    }
 
     private void OnEnable()
     {
@@ -51,8 +60,7 @@ public class FarmingController : MonoBehaviour
             selectedBlock.HarvestPlants();
     }
 
-    // This will be called when the player highlights a tile
-    public void SelectCropBlock(CropBlock block)
+    public void SetSelectedBlock(CropBlock block)  // <-- UPDATED NAME
     {
         selectedBlock = block;
     }
