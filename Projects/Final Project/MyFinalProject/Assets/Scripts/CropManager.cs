@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -10,7 +10,7 @@ public class CropManager : MonoBehaviour
     private List<CropBlock> _plantedCrops = new();
 
     [Header("References")]
-    [SerializeField] private CropBlock _cropBlockPrefab; // assign prefab in Inspector
+    [SerializeField] private CropBlock _cropBlockPrefab; // Assign in Inspector!
 
     private void Awake()
     {
@@ -21,14 +21,16 @@ public class CropManager : MonoBehaviour
     {
         if (_cropGrid == null) return;
 
+        // Find ALL tilemaps under this object
         var tilemaps = GetComponentsInChildren<Tilemap>();
         if (tilemaps.Length == 0) return;
 
-        // Turn off tilemap renderers to hide visual grid layers
         foreach (var tilemap in tilemaps)
         {
-            var r = tilemap.GetComponent<TilemapRenderer>();
-            if (r != null) r.enabled = false;
+            // Optional — hide tilemap visuals
+            var renderer = tilemap.GetComponent<TilemapRenderer>();
+            if (renderer != null)
+                renderer.enabled = false;
 
             GenerateGridUsingTilemap(tilemap);
         }
@@ -44,19 +46,41 @@ public class CropManager : MonoBehaviour
             for (int y = bounds.yMin; y < bounds.yMax; y++)
             {
                 Vector3Int cell = new(x, y, 0);
-                if (!tilemap.HasTile(cell)) continue;
 
-                Vector3 pos = tilemap.CellToWorld(cell);
-                CropBlock block = Instantiate(_cropBlockPrefab, pos, Quaternion.identity, transform);
+                // Only spawn a CropBlock if the tile actually exists
+                if (!tilemap.HasTile(cell))
+                    continue;
+
+                // ⭐ Align crop block using the tilemap anchor
+                Vector3 worldPos =
+                    tilemap.CellToWorld(cell) +
+                    (Vector3)tilemap.tileAnchor;  // <- FIXED ALIGNMENT
+
+                // Spawn CropBlock
+                CropBlock block = Instantiate(
+                    _cropBlockPrefab,
+                    worldPos,
+                    Quaternion.identity,
+                    transform
+                );
+
                 block.Initialize(tilemap.name, new Vector2Int(x, y), this);
+
                 _cropContainer.Add(block);
             }
         }
     }
 
-    public void AddToPlantedCrops(CropBlock crop) => _plantedCrops.Add(crop);
+    // Add a planted crop to list
+    public void AddToPlantedCrops(CropBlock crop)
+    {
+        if (!_plantedCrops.Contains(crop))
+            _plantedCrops.Add(crop);
+    }
 
-    public void RemoveFromPlantedCrops(Vector2Int loc) =>
+    // Remove crop by location
+    public void RemoveFromPlantedCrops(Vector2Int loc)
+    {
         _plantedCrops.RemoveAll(c => c.Location == loc);
+    }
 }
-

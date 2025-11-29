@@ -28,7 +28,7 @@ Transform:
   m_GameObject: {fileID: 8641316604014226411}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.5713176, y: 0.2516327, z: -0.098545074}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -104,6 +104,8 @@ MonoBehaviour:
   cropName: Onion
   spriteRenderer: {fileID: 1365462528413205993}
   cropSprite: {fileID: -6469037229485455139, guid: 3c0fd9e79fa04564cb25b27e59aceaac, type: 3}
+  popScale: 1.5
+  fadeDuration: 0.3
 --- !u!61 &-3578546687258308013
 BoxCollider2D:
   m_ObjectHideFlags: 0

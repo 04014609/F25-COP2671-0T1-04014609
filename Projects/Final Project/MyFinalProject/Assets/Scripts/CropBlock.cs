@@ -1,8 +1,7 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class CropBlock : MonoBehaviour
 {
-    // Enum representing the different states a crop tile can be in
     private enum CropState
     {
         Empty,
@@ -11,51 +10,51 @@ public class CropBlock : MonoBehaviour
         ReadyToHarvest
     }
 
-    // Public property to identify the crop's location on the grid
     public Vector2Int Location { get; protected set; }
 
-    // References to visual components for soil and crop rendering
     [Header("Tilled Soil")]
     [SerializeField] private SpriteRenderer _plowedSoilSR;
-    [SerializeField] Sprite _plowedSoilIcon;
+    [SerializeField] private Sprite _plowedSoilIcon;
 
     [Header("Watered Soil")]
     [SerializeField] private SpriteRenderer _wateredSoilSR;
-    [SerializeField] Sprite _wateredSoilIcon;
+    [SerializeField] private Sprite _wateredSoilIcon;
 
     [Header("Crop Soil")]
     [SerializeField] private SpriteRenderer _cropSR;
 
-    // Internal state tracking for crop growth and type
+    [Header("FX")]
+    [SerializeField] private ParticleSystem _readyParticles;
+
     private SeedPacket.GrowthStage _currentStage;
     private SeedPacket _currentSeedPacket;
 
-    // Flags for crop conditions and interaction control
     private bool _isWatered = false;
     private bool _isWild = false;
     private bool _preventUse = false;
 
-    // Metadata for crop identification
     private string _cropName = string.Empty;
     private string _tilemapName = string.Empty;
 
-    // References to external systems
     private Validator _validator;
     private CropManager _cropController;
-    private ParticleSystem _particleSystem;
 
-    // Current state of the crop tile
     private CropState _currentState = CropState.Empty;
 
-    // Initialization logic for component references
     private void Start()
     {
         _validator = GetComponentInChildren<Validator>();
-        _particleSystem = GetComponentInChildren<ParticleSystem>();
-        _particleSystem.Stop(); // Ensure particles are off initially
+
+        if (_readyParticles != null)
+        {
+            _readyParticles.Stop();
+            _readyParticles.Clear();
+        }
+
+        // ⭐ IMPORTANT – crops update once per day
+        TimeManager.Instance.OnDayPassed.AddListener(NextDay);
     }
 
-    // Initializes the crop block with location and controller reference
     public void Initialize(string tilemapName, Vector2Int location, CropManager cropController)
     {
         Location = location;
@@ -63,14 +62,11 @@ public class CropBlock : MonoBehaviour
         _cropController = cropController;
         _currentState = CropState.Empty;
 
-        name = FormatName(); // Set object name for debugging
-       // DayNightController.Events.OnNewDay.AddListener(NextDay); // Subscribe to daily event
+        name = FormatName();
     }
 
-    // Prevents further interaction with this tile
     public void PreventUse() => _preventUse = true;
 
-    // Transitions soil to plowed state
     public void PlowSoil()
     {
         if (IsMissingRequiredComponents()) return;
@@ -81,41 +77,33 @@ public class CropBlock : MonoBehaviour
         _plowedSoilSR.sprite = _plowedSoilIcon;
     }
 
-    // Waters the soil if conditions are met
     public void WaterSoil()
     {
         if (IsMissingRequiredComponents()) return;
         if (_currentState == CropState.Empty) return;
         if (_preventUse) return;
-        if (_isWatered) return;
+
+        if (_isWatered)
+        {
+            Debug.Log($"[CropBlock] Already watered {Location}");
+            return;
+        }
 
         _wateredSoilSR.sprite = _wateredSoilIcon;
         _isWatered = true;
+
+        Debug.Log($"[CropBlock] WATERED at {Location}");
     }
 
-    // Plants a seed if the soil is plowed
     public void PlantSeed(SeedPacket seedPacket)
     {
         if (IsMissingRequiredComponents()) return;
-        if (_currentState == CropState.Planted) return;
         if (_currentState != CropState.Plowed) return;
 
         CreateCrop(seedPacket);
         UpdateCropImage();
     }
 
-    // Adds a wild crop (e.g., spawned naturally)
-    public void AddWildCrop(SeedPacket seedPacket)
-    {
-        if (IsMissingRequiredComponents()) return;
-        if (_currentState == CropState.Planted) return;
-
-        _isWild = true;
-        CreateCrop(seedPacket);
-        UpdateCropImage();
-    }
-
-    // Instantiates the crop and sets initial growth stage
     private void CreateCrop(SeedPacket seedPacket)
     {
         _currentSeedPacket = Instantiate(seedPacket);
@@ -128,22 +116,30 @@ public class CropBlock : MonoBehaviour
         _cropController.AddToPlantedCrops(this);
     }
 
-    // Advances crop growth if watered or wild
     private void GrowPlants()
     {
         if (_currentState != CropState.Planted) return;
         if (!_isWatered && !_isWild) return;
+        if (_currentSeedPacket == null) return;
 
-        ++_currentStage;
+        // advance stage
+        _currentStage++;
+
+        // cap stage at Mature
         if (_currentStage >= SeedPacket.GrowthStage.Mature)
         {
-            _particleSystem.Play();
+            _currentStage = SeedPacket.GrowthStage.Mature;
             _currentState = CropState.ReadyToHarvest;
+
+            if (_readyParticles != null)
+                _readyParticles.Play();
+
+            Debug.Log($"[CropBlock] READY TO HARVEST {Location}");
         }
+
         UpdateCropImage();
     }
 
-    // Harvests the crop if it's mature
     public void HarvestPlants()
     {
         if (_currentState != CropState.ReadyToHarvest) return;
@@ -152,24 +148,26 @@ public class CropBlock : MonoBehaviour
         ResetSoil();
     }
 
-    // Instantiates the harvested crop prefab
     private void PickCrop()
     {
-        _particleSystem.Stop();
+        if (_readyParticles != null)
+        {
+            _readyParticles.Stop();
+            _readyParticles.Clear();
+        }
 
-        var crop = Instantiate(_currentSeedPacket.HarvestPrefab, transform);
-        crop.transform.SetParent(null); // Detach from tile
+        var crop = Instantiate(_currentSeedPacket.HarvestPrefab, transform.position, Quaternion.identity);
+        crop.transform.SetParent(null);
 
         _cropController.RemoveFromPlantedCrops(Location);
     }
 
-    // Updates the crop's visual based on growth stage
     private void UpdateCropImage()
     {
+        if (_currentSeedPacket == null) return;
         _cropSR.sprite = _currentSeedPacket.GetIconForStage(_currentStage);
     }
 
-    // Resets the tile to its initial empty state
     private void ResetSoil()
     {
         _currentState = CropState.Empty;
@@ -179,56 +177,50 @@ public class CropBlock : MonoBehaviour
         _plowedSoilSR.sprite = null;
         _wateredSoilSR.sprite = null;
         _cropSR.sprite = null;
-        _cropName = string.Empty;
+
+        if (_readyParticles != null)
+        {
+            _readyParticles.Stop();
+            _readyParticles.Clear();
+        }
 
         name = FormatName();
     }
 
-    // Enables the validator for interaction checks
     public void TurnValidatorOn()
     {
-        if (_validator == null) return;
-        if (_isWild && _currentStage == SeedPacket.GrowthStage.Mature)
-        {
-            _validator.TurnValidatorOn();
-            return;
-        }
-
-        if (_preventUse) return;
+        if (_validator == null || _preventUse) return;
         _validator.TurnValidatorOn();
     }
 
-    // Disables the validator
     public void TurnValidatorOff()
     {
         if (_validator == null) return;
         _validator.TurnValidatorOff();
     }
 
-    // Called daily to grow crops and reset watering
     private void NextDay()
     {
         if (_currentState == CropState.ReadyToHarvest) return;
+
         GrowPlants();
 
+        // ⭐ RESET WATER EVERY DAY
         _isWatered = false;
         _wateredSoilSR.sprite = null;
     }
 
-    // Formats the object name for debugging
-    private string FormatName() => _currentState == CropState.Planted
+    private string FormatName() =>
+        _currentState == CropState.Planted
         ? $"{_tilemapName}-{_cropName} [{Location.x},{Location.y}]"
         : $"{_tilemapName} [{Location.x},{Location.y}]";
 
-    // Checks if required components are missing
     private bool IsMissingRequiredComponents()
     {
-        bool missing = false;
-        if (_wateredSoilSR == null) { Debug.LogWarning("Missing watered soil SpriteRenderer"); missing = true; }
-        if (_wateredSoilIcon == null) { Debug.LogWarning("Missing watered soil icon"); missing = true; }
-        if (_plowedSoilSR == null) { Debug.LogWarning("Missing plowed soil SpriteRenderer"); missing = true; }
-        if (_plowedSoilIcon == null) { Debug.LogWarning("Missing plowed soil icon"); missing = true; }
-
-        return missing;
+        return
+            _plowedSoilSR == null ||
+            _plowedSoilIcon == null ||
+            _wateredSoilSR == null ||
+            _wateredSoilIcon == null;
     }
 }

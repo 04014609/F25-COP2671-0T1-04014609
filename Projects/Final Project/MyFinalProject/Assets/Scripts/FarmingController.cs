@@ -68,5 +68,6 @@ public class FarmingController : MonoBehaviour
     public void SetSeed(SeedPacket seed)
     {
         currentSeed = seed;
+        Debug.Log("Selected seed: " + (seed != null ? seed.CropName : "None"));
     }
 }

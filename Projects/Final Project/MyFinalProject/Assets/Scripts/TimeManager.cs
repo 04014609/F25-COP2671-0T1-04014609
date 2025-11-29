@@ -12,6 +12,7 @@ public class TimeManager : MonoBehaviour
 
     [Header("Events")]
     public UnityEvent OnMinutePassed; // Called every in-game minute
+    public UnityEvent OnDayPassed;    // Called once every day
 
     private void Awake()
     {
@@ -24,7 +25,6 @@ public class TimeManager : MonoBehaviour
 
     private void Start()
     {
-        // Start the time coroutine
         StartCoroutine(TimeTick());
     }
 
@@ -42,12 +42,14 @@ public class TimeManager : MonoBehaviour
                 hours++;
 
                 if (hours >= 24)
+                {
                     hours = 0;
+                    OnDayPassed?.Invoke();
+                    Debug.Log("A new day has started!");
+                }
             }
 
             Debug.Log($"Time: {hours:D2}:{minutes:D2}");
-
-            // Trigger event for other scripts
             OnMinutePassed?.Invoke();
         }
     }

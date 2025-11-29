@@ -4,30 +4,39 @@ using UnityEngine.Tilemaps;
 public class TileSelector : MonoBehaviour
 {
     [Header("References")]
-    public Transform player;
-    public PlayerController playerController;
-    public Tilemap cropTilemap;
-    public SpriteRenderer cursorSprite;
+    public Transform player;                     // Player transform
+    public PlayerController playerController;    // PlayerController script
+    public Tilemap cropTilemap;                  // Crops Tilemap
+    public SpriteRenderer cursorSprite;          // Cursor sprite renderer
 
     [Header("Cursor Offset Tuning")]
-    // Adjust this until cursor matches the tile in front of player
-    public float cursorYOffset = -0.5f;
+    // This lowers the target point so it aligns with the player's feet visually.
+    public float cursorYOffset = -0.55f;
+
+    // Down direction fix (extra upward correction when facing down)
+    public float downFixOffset = 0.45f;
 
     private void Update()
     {
-        if (!player || !cursorSprite || !cropTilemap || !playerController)
+        if (!player || !playerController || !cropTilemap || !cursorSprite)
             return;
 
-        // 1. Target point = player pivot + offset downward
+        // 1. Start from the player's pivot + visual feet offset
         Vector3 targetFeet = player.position + new Vector3(0, cursorYOffset, 0);
 
-        // 2. Facing direction
+        // 2. Get the direction the player is facing
         Vector2 dir = playerController.LastMoveDirection;
         if (dir.sqrMagnitude < 0.1f)
-            dir = Vector2.down;
+            dir = Vector2.down;  // default when idle
 
-        // 3. Tile in front
+        // 3. Tile in front of the player
         Vector3 worldTarget = targetFeet + (Vector3)dir;
+
+        // SPECIAL FIX: cursor is too far ahead when facing DOWN
+        if (dir == Vector2.down)
+        {
+            worldTarget += new Vector3(0, downFixOffset, 0);
+        }
 
         // 4. Convert world → tile
         Vector3Int cellPos = cropTilemap.WorldToCell(worldTarget);
@@ -40,6 +49,7 @@ public class TileSelector : MonoBehaviour
         {
             cursorSprite.enabled = true;
 
+            // Select the cropblock at this tile
             CropBlock block = FindBlockAt(cellPos);
             if (block != null)
                 FarmingController.Instance.SetSelectedBlock(block);
