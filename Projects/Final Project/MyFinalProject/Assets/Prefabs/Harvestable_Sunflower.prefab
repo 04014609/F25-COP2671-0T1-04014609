@@ -101,6 +101,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3197c3811f8e5b2439bf092323da58cd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  itemData: {fileID: 11400000, guid: 9fea9072ddf1f5e4885c6757a9be7afa, type: 2}
   cropName: Sunflower
   spriteRenderer: {fileID: 3186738004298298224}
   cropSprite: {fileID: -1664146883213294689, guid: 3c0fd9e79fa04564cb25b27e59aceaac, type: 3}

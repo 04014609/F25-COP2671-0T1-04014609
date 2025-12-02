@@ -101,6 +101,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3197c3811f8e5b2439bf092323da58cd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  itemData: {fileID: 11400000, guid: 30b6bf5f510c4b54ea03eeb1a2f00fc0, type: 2}
   cropName: Onion
   spriteRenderer: {fileID: 1365462528413205993}
   cropSprite: {fileID: -6469037229485455139, guid: 3c0fd9e79fa04564cb25b27e59aceaac, type: 3}
