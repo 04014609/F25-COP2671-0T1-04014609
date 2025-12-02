@@ -88,7 +88,7 @@ public class SeedSelector : MonoBehaviour
         if (_plantLabel != null)
         {
             // e.g. "3 Plant (Onion)"
-            _plantLabel.text = $"{seed.CropName}";
+            _plantLabel.text = $"3 {seed.CropName}";
         }
 
         Debug.Log("[SeedSelector] Selected seed: " + seed.CropName);

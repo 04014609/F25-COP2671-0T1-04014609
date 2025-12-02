@@ -11,10 +11,10 @@ public class TileSelector : MonoBehaviour
 
     [Header("Cursor Offset Tuning")]
     // This lowers the target point so it aligns with the player's feet visually.
-    public float cursorYOffset = -0.55f;
+    public float cursorYOffset = 0f;
 
     // Down direction fix (extra upward correction when facing down)
-    public float downFixOffset = 0.45f;
+    public float downFixOffset = 0f;
 
     private void Update()
     {
