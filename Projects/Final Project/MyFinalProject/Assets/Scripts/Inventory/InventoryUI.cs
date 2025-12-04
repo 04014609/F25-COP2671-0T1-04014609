@@ -6,6 +6,7 @@ public class InventoryUI : MonoBehaviour
     public Transform gridParent;        // assign the Grid with GridLayoutGroup
     private InventorySystem inventory;
 
+
     private void Awake()
     {
         inventory = FindFirstObjectByType<InventorySystem>();

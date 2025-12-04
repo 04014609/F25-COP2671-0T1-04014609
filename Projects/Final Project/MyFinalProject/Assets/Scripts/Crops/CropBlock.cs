@@ -30,7 +30,7 @@ public class CropBlock : MonoBehaviour
     private SeedPacket _currentSeedPacket;
 
     private bool _isWatered = false;
-    private bool _isWild = false;
+    private bool _isWild = false;       // ⭐ changes behavior: wild crops grow without watering
     private bool _preventUse = false;
 
     private string _cropName = string.Empty;
@@ -51,7 +51,7 @@ public class CropBlock : MonoBehaviour
             _readyParticles.Clear();
         }
 
-        // ⭐ IMPORTANT – crops update once per day
+        // Crops update every day
         TimeManager.Instance.OnDayPassed.AddListener(NextDay);
     }
 
@@ -62,7 +62,18 @@ public class CropBlock : MonoBehaviour
         _cropController = cropController;
         _currentState = CropState.Empty;
 
+        // ⭐ NEW: Mark this block as wild if coming from a tilemap named “Wild…”
+        if (_tilemapName.Contains("Wild"))
+            _isWild = true;
+
         name = FormatName();
+    }
+
+    // ⭐ OPTIONAL HELPER — Only needed if CropManager wants to auto-water wild crops
+    public void ForceWildGrow()
+    {
+        _isWild = true;
+        _isWatered = true;   // auto-water wild crops so they grow each day
     }
 
     public void PreventUse() => _preventUse = true;
@@ -119,13 +130,14 @@ public class CropBlock : MonoBehaviour
     private void GrowPlants()
     {
         if (_currentState != CropState.Planted) return;
+
+        // ⭐ WILD: grows without water
         if (!_isWatered && !_isWild) return;
+
         if (_currentSeedPacket == null) return;
 
-        // advance stage
         _currentStage++;
 
-        // cap stage at Mature
         if (_currentStage >= SeedPacket.GrowthStage.Mature)
         {
             _currentStage = SeedPacket.GrowthStage.Mature;
@@ -172,7 +184,7 @@ public class CropBlock : MonoBehaviour
     {
         _currentState = CropState.Empty;
         _isWatered = false;
-        _isWild = false;
+        _isWild = false; // reset wild status — avoids issues
 
         _plowedSoilSR.sprite = null;
         _wateredSoilSR.sprite = null;
@@ -205,7 +217,6 @@ public class CropBlock : MonoBehaviour
 
         GrowPlants();
 
-        // ⭐ RESET WATER EVERY DAY
         _isWatered = false;
         _wateredSoilSR.sprite = null;
     }

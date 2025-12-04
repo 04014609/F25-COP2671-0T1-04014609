@@ -2,21 +2,43 @@ using UnityEngine;
 
 public class InventoryToggleUI : MonoBehaviour
 {
-    [SerializeField] private GameObject inventoryPanel; // assign your Inventory Panel
-
+    [SerializeField] private CanvasGroup inventoryPanel; // The InventoryPanel CanvasGroup
+    private bool isOpen = false;
 
     private void Start()
     {
-        inventoryPanel.SetActive(false);
+        HidePanel();
     }
-
 
     private void Update()
     {
-        // Press W to toggle inventory
         if (Input.GetKeyDown(KeyCode.W))
         {
-            inventoryPanel.SetActive(!inventoryPanel.activeSelf);
+            ToggleInventory();
         }
+    }
+
+    private void ToggleInventory()
+    {
+        isOpen = !isOpen;
+
+        if (isOpen)
+            ShowPanel();
+        else
+            HidePanel();
+    }
+
+    private void ShowPanel()
+    {
+        inventoryPanel.alpha = 1f;
+        inventoryPanel.interactable = true;
+        inventoryPanel.blocksRaycasts = true;
+    }
+
+    private void HidePanel()
+    {
+        inventoryPanel.alpha = 0f;
+        inventoryPanel.interactable = false;
+        inventoryPanel.blocksRaycasts = false;
     }
 }
