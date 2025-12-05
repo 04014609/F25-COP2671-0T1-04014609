@@ -1,38 +1,41 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
 public class WildCropManager : MonoBehaviour
 {
     [Header("Wild Crop Settings")]
-    [SerializeField] private SeedPacket[] wildSeeds;
-    [SerializeField] private float spawnChance = 0.10f; // 10% chance per tile each day
-    [SerializeField] private int maxCropsPerDay = 6;    // limit spawns
+    [SerializeField] private SeedPacket[] wildSeeds;  // Strawberry, Sunflower, etc.
+    [SerializeField] private float spawnChance = 0.10f;
+    [SerializeField] private int maxWildCrops = 50;
+    [SerializeField] private int spawnPerDay = 6;
 
     [Header("References")]
-    [SerializeField] private CropBlock cropBlockPrefab; // same prefab used for farm crops
+    [SerializeField] private CropBlock cropBlockPrefab;
 
-    private Grid _grid;
-    private List<CropBlock> _wildCrops = new();
-    private Tilemap[] _wildTilemaps;
+    private List<Vector3Int> wildCells = new();
+    private Tilemap[] wildTilemaps;
+
+    private int CurrentWildCount => FindObjectsByType<CropBlock>(FindObjectsSortMode.None)
+                                    .Count(b => b.name.Contains("Wild"));
 
     private void Awake()
     {
-        _grid = GetComponent<Grid>();
-        _wildTilemaps = GetComponentsInChildren<Tilemap>();
+        wildTilemaps = GetComponentsInChildren<Tilemap>();
+        CacheTileCells();
     }
 
     private void Start()
     {
-        // hook into NEXT DAY event
         TimeManager.Instance.OnDayPassed.AddListener(SpawnWildCrops);
     }
 
-    private void SpawnWildCrops()
+    private void CacheTileCells()
     {
-        int spawned = 0;
+        wildCells.Clear();
 
-        foreach (var tilemap in _wildTilemaps)
+        foreach (var tilemap in wildTilemaps)
         {
             tilemap.CompressBounds();
             BoundsInt bounds = tilemap.cellBounds;
@@ -41,49 +44,81 @@ public class WildCropManager : MonoBehaviour
             {
                 for (int y = bounds.yMin; y < bounds.yMax; y++)
                 {
-                    if (spawned >= maxCropsPerDay)
-                        return;
-
                     Vector3Int cell = new(x, y, 0);
-
-                    if (!tilemap.HasTile(cell))
-                        continue;
-
-                    if (Random.value > spawnChance)
-                        continue;
-
-                    // Convert tile position to world position
-                    Vector3 worldPos =
-                        tilemap.CellToWorld(cell) + (Vector3)tilemap.tileAnchor;
-
-                    // Spawn CropBlock
-                    CropBlock block = Instantiate(
-                        cropBlockPrefab,
-                        worldPos,
-                        Quaternion.identity,
-                        this.transform
-                    );
-
-                    block.Initialize("Wild", new Vector2Int(x, y), null);
-
-                    // pick a random wild seed
-                    SeedPacket chosen = wildSeeds[Random.Range(0, wildSeeds.Length)];
-
-                    // PLANT immediately (auto-wild)
-                    PlantWildCrop(block, chosen);
-
-                    _wildCrops.Add(block);
-                    spawned++;
+                    if (tilemap.HasTile(cell))
+                        wildCells.Add(cell);
                 }
             }
         }
+
+        Debug.Log($"[WildCropManager] Cached {wildCells.Count} wild tiles.");
     }
 
-    private void PlantWildCrop(CropBlock block, SeedPacket seed)
+    private void SpawnWildCrops()
     {
-        // convert CropBlock into a planted wild crop
-        block.PreventUse();           // player can't plow or water wild crops
-        block.WaterSoil();            // mark watered so it grows automatically
-        block.PlantSeed(seed);
+        // SAFETY 1 — tiles missing
+        if (wildCells.Count == 0)
+        {
+            Debug.LogWarning("[WildCropManager] No wild tiles found!");
+            return;
+        }
+
+        // SAFETY 2 — no seeds assigned
+        if (wildSeeds == null || wildSeeds.Length == 0)
+        {
+            Debug.LogWarning("[WildCropManager] No wild seeds assigned!");
+            return;
+        }
+
+        int existing = CurrentWildCount;
+        int toSpawn = Mathf.Min(spawnPerDay, maxWildCrops - existing);
+
+        if (toSpawn <= 0)
+        {
+            Debug.Log("[WildCropManager] Wild crop limit reached.");
+            return;
+        }
+
+        int spawned = 0;
+
+        foreach (var tilemap in wildTilemaps)
+        {
+            foreach (var cell in wildCells)
+            {
+                if (spawned >= toSpawn) return;
+                if (Random.value > spawnChance) continue;
+
+                // Safe world position
+                Vector3 worldPos =
+                    tilemap.CellToWorld(cell) +
+                    (Vector3)tilemap.tileAnchor;
+
+                // Safe random seed
+                int idx = Random.Range(0, wildSeeds.Length);
+                if (idx < 0 || idx >= wildSeeds.Length) continue;
+
+                SeedPacket seed = wildSeeds[idx];
+                if (seed == null || seed.HarvestPrefab == null) continue;
+
+                // Spawn wild CropBlock
+                CropBlock block = Instantiate(
+                    cropBlockPrefab,
+                    worldPos,
+                    Quaternion.identity,
+                    this.transform
+                );
+
+                block.Initialize("Wild", new Vector2Int(cell.x, cell.y), null);
+
+                // Mark as wild + allow auto-growth
+                block.PreventUse();
+                block.WaterSoil();
+                block.PlantSeed(seed);
+
+                spawned++;
+            }
+        }
+
+        Debug.Log($"[WildCropManager] Spawned {spawned} wild crops safely.");
     }
 }

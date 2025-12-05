@@ -45,7 +45,8 @@ public class TimeManager : MonoBehaviour
                 {
                     hours = 0;
                     OnDayPassed?.Invoke();
-                    Debug.Log("A new day has started!");
+                    FindFirstObjectByType<DayPopupUI>()?.ShowPopup("Good Morning!");
+                    //Debug.Log("A new day has started!");
                 }
             }
 
